@@ -1,0 +1,26 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body, #root { height: 100%; }
+body { @apply bg-vitaBg text-gray-900; }
+
+/* Image theme background overlay for the app shell */
+.app-shell {
+	background-image: linear-gradient(rgba(7,31,50,0.04), rgba(7,31,50,0.04)), url('/assets/splash/splash_home.png');
+	background-size: cover;
+	background-position: center;
+}
+
+.card { @apply bg-white shadow-soft rounded-xl border border-vitaCardBorder; }
+.btn-gold { @apply btn btn-primary bg-vitaGold border-vitaGold text-black hover:brightness-95; }
+.btn-blue { @apply btn bg-vitaBlue-700 border-vitaBlue-700 text-white hover:bg-vitaBlue-800; }
+.input-soft { @apply input input-bordered border-vitaCardBorder; }
+
+/* Sidebar active styles */
+.sidebar-link { @apply flex items-center px-4 py-2 text-white/90 hover:bg-vitaBlue-800/60 transition-colors; }
+.sidebar-link-active { @apply bg-vitaBlue-800/60 text-white border-l-2 border-vitaGold; }
+
+/* Dashboard badges */
+.badge-card { @apply bg-white rounded-xl border border-vitaCardBorder shadow-soft; }
+.badge-pill { @apply px-3 py-1 rounded-full bg-vitaGold/15 text-vitaBlue-700 font-semibold; }

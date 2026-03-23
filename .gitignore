@@ -54,3 +54,8 @@ android/key.properties
 # Build artifacts
 build/
 .dart_tool/
+
+# Node / Admin panel
+node_modules/
+Admin__panel/node_modules/
+Admin__panel/dist/
