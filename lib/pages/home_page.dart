@@ -11,7 +11,6 @@ import '../widgets/vita_app_bar.dart';
 import '../services/shlok_service.dart';
 import '../services/user_service.dart';
 import '../services/language_service.dart';
-import '../services/point_event_bus.dart';
 import '../routes.dart';
 import '../models/shlok.dart';
 import '../services/localization_service.dart';
@@ -38,6 +37,38 @@ class _HomePageState extends State<HomePage> {
     super.initState();
     _load();
     _updateStreak();
+    // Award login points after frame is rendered so snackbar can show
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _awardLoginPoints();
+    });
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+  }
+
+  /// Award login points (5 pts, once per day) and show snackbar feedback.
+  Future<void> _awardLoginPoints() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+    try {
+      final isEligible =
+          await _userService.isActivityEligibleToday(uid, 'login');
+      if (!isEligible) return;
+      await _userService.logActivityAndAwardPoints(uid, 'login', 5);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('+5 Points! Login Reward'),
+            duration: Duration(seconds: 3),
+            backgroundColor: Color(0xFF6A5AAE),
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('[points] login award failed: $e');
+    }
   }
 
   Future<void> _updateStreak() async {

@@ -6,7 +6,6 @@ import '../widgets/vita_app_bar.dart';
 import '../services/shlok_service.dart';
 import '../services/video_link_service.dart';
 import '../services/user_service.dart';
-import '../services/point_event_bus.dart';
 import '../services/language_service.dart';
 import '../services/localization_service.dart';
 import '../widgets/shlok_video_player.dart';
@@ -91,15 +90,17 @@ class _ShlokDetailPageState extends State<ShlokDetailPage> {
       final isEligible =
           await _userService.isActivityEligibleToday(uid, 'share');
       if (isEligible) {
-        // Optimistic update: show +50 points immediately
-        PointEventBus().notifyPointsChanged(50);
-
-        // Background Firestore write (don't await)
-        _userService.logActivityAndAwardPoints(uid, 'share', 50).then((_) {
-          debugPrint('[points] awarded +50 for sharing to $uid');
-        }).catchError((e) {
-          debugPrint('[points] failed to award share points: $e');
-        });
+        await _userService.logActivityAndAwardPoints(uid, 'share', 50);
+        debugPrint('[points] awarded +50 for sharing to $uid');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('+50 Points! Share Reward'),
+              duration: Duration(seconds: 3),
+              backgroundColor: Color(0xFF6A5AAE),
+            ),
+          );
+        }
       } else {
         debugPrint('[points] share already awarded today for $uid');
       }
@@ -204,10 +205,7 @@ class _ShlokDetailPageState extends State<ShlokDetailPage> {
   /// Only awards points if searchQuery is provided (user came from search)
   Future<void> _awardSearchPoints(String? searchQuery) async {
     // Only award search points if user came from search results
-    if (searchQuery == null || searchQuery.isEmpty) {
-      debugPrint('[points] no search query provided, skipping search points');
-      return;
-    }
+    if (searchQuery == null || searchQuery.isEmpty) return;
 
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
@@ -216,17 +214,17 @@ class _ShlokDetailPageState extends State<ShlokDetailPage> {
       final isEligible =
           await _userService.isActivityEligibleToday(uid, 'search');
       if (isEligible) {
-        // Optimistic update: award points immediately (10 for search)
-        PointEventBus().notifyPointsChanged(10);
-        debugPrint(
-            '[points] user clicked shlok from search, awarding +10 for search');
-
-        // Background Firestore write (don't await)
-        _userService.logActivityAndAwardPoints(uid, 'search', 10).then((_) {
-          debugPrint('[points] awarded +10 for search/click to $uid');
-        }).catchError((e) {
-          debugPrint('[points] failed to award search points: $e');
-        });
+        await _userService.logActivityAndAwardPoints(uid, 'search', 10);
+        debugPrint('[points] awarded +10 for search/click to $uid');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('+10 Points! Shlok Search Reward'),
+              duration: Duration(seconds: 3),
+              backgroundColor: Color(0xFF6A5AAE),
+            ),
+          );
+        }
       } else {
         debugPrint('[points] search already awarded today for $uid');
       }

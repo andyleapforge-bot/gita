@@ -5,7 +5,6 @@ import 'package:flutter/foundation.dart';
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'user_service.dart';
-import 'point_event_bus.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -22,7 +21,6 @@ class AuthService {
     await userService.createUserIfNotExists(cred);
     if (cred.user != null) {
       await userService.ensurePointsFields(cred.user!.uid);
-      await _awardLoginPoints(userService, cred.user!.uid);
     }
     return cred;
   }
@@ -36,7 +34,6 @@ class AuthService {
     await userService.createUserIfNotExists(cred);
     if (cred.user != null) {
       await userService.ensurePointsFields(cred.user!.uid);
-      await _awardLoginPoints(userService, cred.user!.uid);
     }
     return cred;
   }
@@ -65,7 +62,6 @@ class AuthService {
     await userService.createUserIfNotExists(cred);
     if (cred.user != null) {
       await userService.ensurePointsFields(cred.user!.uid);
-      await _awardLoginPoints(userService, cred.user!.uid);
     }
     return cred;
   }
@@ -89,7 +85,6 @@ class AuthService {
     await userService.createUserIfNotExists(cred);
     if (cred.user != null) {
       await userService.ensurePointsFields(cred.user!.uid);
-      await _awardLoginPoints(userService, cred.user!.uid);
     }
     return cred;
   }
@@ -106,30 +101,8 @@ class AuthService {
     await userService.createUserIfNotExists(cred);
     if (cred.user != null) {
       await userService.ensurePointsFields(cred.user!.uid);
-      await _awardLoginPoints(userService, cred.user!.uid);
     }
     return cred;
-  }
-
-  /// Award login points (5 points, once per day).
-  Future<void> _awardLoginPoints(UserService userService, String uid) async {
-    try {
-      final isEligible =
-          await userService.isActivityEligibleToday(uid, 'login');
-      if (isEligible) {
-        // Optimistic update: show +5 points immediately
-        PointEventBus().notifyPointsChanged(5);
-
-        // Background Firestore write (don't await)
-        userService.logActivityAndAwardPoints(uid, 'login', 5).then((_) {
-          print('[points] awarded +5 for login to $uid');
-        }).catchError((e) {
-          print('[points] failed to award login points: $e');
-        });
-      }
-    } catch (e) {
-      print('[points] failed to award login points: $e');
-    }
   }
 
   Future<void> updateProfile({String? displayName, String? email}) async {

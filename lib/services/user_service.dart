@@ -14,14 +14,12 @@ class UserService {
     final ref = _db.collection(usersCollection).doc(u.uid);
 
     await ref.set({
-      'name': '',
       'email': u.email ?? '',
-      'dob': '',
       'bookmarks': <String>[],
-      'points': 0,
-      'rewardScore': 0,
-      'streak': 0,
-      'lastOpenDate': '',
+      // Use increment(0) so existing values are never overwritten on re-login
+      'points': FieldValue.increment(0),
+      'rewardScore': FieldValue.increment(0),
+      'streak': FieldValue.increment(0),
       'createdAt': Timestamp.now(),
     }, SetOptions(merge: true));
   }
@@ -46,7 +44,7 @@ class UserService {
     await _db.collection(usersCollection).doc(uid).set({
       'points': FieldValue.increment(0),
       'rewardScore': FieldValue.increment(0),
-      'activities': {},
+      // Do NOT include 'activities: {}' here — it would wipe the activity log
     }, SetOptions(merge: true));
   }
 
@@ -72,15 +70,24 @@ class UserService {
         DateTime.now().toIso8601String().split('T').first; // YYYY-MM-DD
     final actKey = '$activityName:$dateKey';
 
-    await _db.collection(usersCollection).doc(uid).set({
-      'points': FieldValue.increment(pointsToAward),
-      'rewardScore': FieldValue.increment(pointsToAward),
-      'activities.$actKey': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
+    // Use set() with mergeFields + FieldPath so this works even when the
+    // document or the `activities` nested field doesn't exist yet.
+    // update() would fail silently if the `activities` map was never written.
+    await _db.collection(usersCollection).doc(uid).set(
+      {
+        'points': FieldValue.increment(pointsToAward),
+        'rewardScore': FieldValue.increment(pointsToAward),
+        'activities': {actKey: FieldValue.serverTimestamp()},
+      },
+      SetOptions(mergeFields: [
+        FieldPath(['points']),
+        FieldPath(['rewardScore']),
+        FieldPath(['activities', actKey]),
+      ]),
+    );
   }
 
-  /// Log a listen activity (no daily cap - award points every time user listens to completion).
-  /// Each unique shlok can award points multiple times.
+  /// Log a listen activity (once per unique shlok - award points on first listen).
   Future<void> logListenActivityAndAwardPoints(
     String uid,
     String shlokId,
@@ -88,11 +95,20 @@ class UserService {
   ) async {
     final actKey = 'listen:$shlokId';
 
-    await _db.collection(usersCollection).doc(uid).set({
-      'points': FieldValue.increment(pointsToAward),
-      'rewardScore': FieldValue.increment(pointsToAward),
-      'activities.$actKey': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
+    // Use set() with mergeFields + FieldPath so this works even when the
+    // document or the `activities` nested field doesn't exist yet.
+    await _db.collection(usersCollection).doc(uid).set(
+      {
+        'points': FieldValue.increment(pointsToAward),
+        'rewardScore': FieldValue.increment(pointsToAward),
+        'activities': {actKey: FieldValue.serverTimestamp()},
+      },
+      SetOptions(mergeFields: [
+        FieldPath(['points']),
+        FieldPath(['rewardScore']),
+        FieldPath(['activities', actKey]),
+      ]),
+    );
   }
 
   /// Get raw user doc data (for checking activities).

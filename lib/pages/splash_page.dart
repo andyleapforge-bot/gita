@@ -28,7 +28,7 @@ class _SplashPageState extends State<SplashPage> {
         child: Transform.scale(
           scale: 1.02,
           child: Image.asset(
-            'assets/splash/splash_home.png',
+            'assets/splash/splash_screen.png',
             fit: BoxFit.contain,
           ),
         ),

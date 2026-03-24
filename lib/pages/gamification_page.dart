@@ -7,7 +7,6 @@ import '../widgets/vita_app_bar.dart';
 import '../services/language_service.dart';
 import '../services/localization_service.dart';
 import '../services/user_service.dart';
-import '../services/point_event_bus.dart';
 
 class GamificationPage extends StatefulWidget {
   const GamificationPage({super.key});
@@ -72,18 +71,26 @@ class _GamificationPageState extends State<GamificationPage> {
       ];
 
       final levels = [
-        {'range': '0-500', 'level': t('level_shishu'), 'image': 'shishu_new'},
+        {'range': '0-500', 'level': t('level_shishu'), 'image': 'level_shishu'},
         {
           'range': '501-2000',
           'level': t('level_sainik'),
-          'image': 'sainik_zoom'
+          'image': 'level_sainik'
         },
-        {'range': '2001-5000', 'level': t('level_rathi'), 'image': 'rathi_new'},
-        {'range': '5001-20000', 'level': t('level_atirathi'), 'image': 'ath'},
+        {
+          'range': '2001-5000',
+          'level': t('level_rathi'),
+          'image': 'level_rathi'
+        },
+        {
+          'range': '5001-20000',
+          'level': t('level_atirathi'),
+          'image': 'level_atirathi'
+        },
         {
           'range': '>20001',
           'level': t('level_maharathi'),
-          'image': 'maharati_new'
+          'image': 'level_maharathi'
         },
       ];
 
@@ -131,38 +138,25 @@ class _GamificationPageState extends State<GamificationPage> {
                     builder: (context, snapshot) {
                       final loading =
                           snapshot.connectionState == ConnectionState.waiting;
-                      int firebasePoints = 0;
+                      int points = 0;
                       if (snapshot.hasData && snapshot.data?.data() != null) {
                         final data = snapshot.data!.data()!;
                         final val = data['rewardScore'] ?? data['points'];
                         if (val is int)
-                          firebasePoints = val;
-                        else if (val is num) firebasePoints = val.toInt();
+                          points = val;
+                        else if (val is num) points = val.toInt();
                       }
 
-                      // Listen to EventBus for optimistic updates
-                      return StreamBuilder<int>(
-                        stream: PointEventBus().pointsStream,
-                        builder: (context, eventSnapshot) {
-                          int displayPoints = firebasePoints;
-
-                          // If optimistic event received, add to Firestore points
-                          if (eventSnapshot.hasData) {
-                            displayPoints += eventSnapshot.data!;
-                          }
-
-                          final display = _digits(
-                            loading ? '...' : displayPoints.toString(),
-                            lang,
-                          );
-                          final levelKey = _getLevelKey(displayPoints);
-                          return _buildPointsCard(
-                            title: t('your_points'),
-                            value: display,
-                            levelKey: levelKey,
-                            lang: lang,
-                          );
-                        },
+                      final display = _digits(
+                        loading ? '...' : points.toString(),
+                        lang,
+                      );
+                      final levelKey = _getLevelKey(points);
+                      return _buildPointsCard(
+                        title: t('your_points'),
+                        value: display,
+                        levelKey: levelKey,
+                        lang: lang,
                       );
                     },
                   ),
@@ -263,7 +257,7 @@ class _GamificationPageState extends State<GamificationPage> {
                                 borderRadius: BorderRadius.circular(6),
                                 image: DecorationImage(
                                   image: AssetImage(
-                                    'assets/splash/${row.imageName}.jpeg',
+                                    'assets/splash/${row.imageName}.jpg',
                                   ),
                                   fit: BoxFit.cover,
                                 ),

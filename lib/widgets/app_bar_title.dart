@@ -10,7 +10,7 @@ class AppBarTitle extends StatelessWidget {
       child: Align(
         alignment: Alignment.centerLeft,
         child: Image.asset(
-          'assets/splash/FINAL_NAVLOGO.png',
+          'assets/splash/appbar_logo.png',
           fit: BoxFit.fitHeight,
         ),
       ),

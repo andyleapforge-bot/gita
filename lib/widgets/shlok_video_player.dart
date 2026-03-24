@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/user_service.dart';
-import '../services/point_event_bus.dart';
 
 class ShlokVideoPlayer extends StatefulWidget {
   final String url;
@@ -62,34 +61,35 @@ class _ShlokVideoPlayerState extends State<ShlokVideoPlayer> {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     final shlokId = widget.shlokId;
 
-    if (uid != null && shlokId != null && shlokId.isNotEmpty) {
-      try {
-        // Check if this shlok was already listened to (in Firestore activities)
-        final doc = await _userService.getDoc(uid);
-        final activities = (doc?['activities'] as Map<String, dynamic>?) ?? {};
-        final listenKey = 'listen:$shlokId';
+    if (uid == null || shlokId == null || shlokId.isEmpty) return;
 
-        if (!activities.containsKey(listenKey)) {
-          // First listen to this shlok: award points
-          PointEventBus().notifyPointsChanged(20);
-          debugPrint(
-              '[points] watching shlok $shlokId for 5+ sec, awarding +20');
+    try {
+      // Check if this shlok was already listened to
+      final isEligible =
+          await _userService.isActivityEligibleToday(uid, 'listen_$shlokId');
+      // Note: reuse the per-day eligibility check keyed by shlokId
+      final doc = await _userService.getDoc(uid);
+      final activities = (doc?['activities'] as Map<String, dynamic>?) ?? {};
+      final listenKey = 'listen:$shlokId';
 
-          // Background Firestore write (don't await)
-          _userService
-              .logListenActivityAndAwardPoints(uid, shlokId, 20)
-              .then((_) {
-            debugPrint('[points] awarded +20 for listening to shlok $shlokId');
-          }).catchError((e) {
-            debugPrint('[points] failed to award listen points: $e');
-          });
-        } else {
-          debugPrint(
-              '[points] shlok $shlokId already listened, no points awarded');
+      if (!activities.containsKey(listenKey)) {
+        debugPrint('[points] awarding +20 for listening to shlok $shlokId');
+        await _userService.logListenActivityAndAwardPoints(uid, shlokId, 20);
+        debugPrint('[points] awarded +20 for listening to shlok $shlokId');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('+20 Points! Shlok Listen Reward'),
+              duration: Duration(seconds: 3),
+              backgroundColor: Color(0xFF6A5AAE),
+            ),
+          );
         }
-      } catch (e) {
-        debugPrint('[points] error checking listen activity: $e');
+      } else {
+        debugPrint('[points] shlok $shlokId already listened, no points');
       }
+    } catch (e) {
+      debugPrint('[points] error awarding listen points: $e');
     }
   }
 
