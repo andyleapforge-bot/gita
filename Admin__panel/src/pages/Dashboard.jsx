@@ -57,6 +57,7 @@ export default function Dashboard() {
               <tr>
                 <th>Name</th>
                 <th>Email</th>
+                <th>Bookmarks</th>
                 <th>Joined</th>
               </tr>
             </thead>
@@ -64,8 +65,8 @@ export default function Dashboard() {
               {users
                 .slice()
                 .sort((a, b) => {
-                  const ad = a.createdAt ? new Date(a.createdAt) : new Date(0)
-                  const bd = b.createdAt ? new Date(b.createdAt) : new Date(0)
+                  const ad = a.createdAt ? a.createdAt : new Date(0)
+                  const bd = b.createdAt ? b.createdAt : new Date(0)
                   return bd - ad
                 })
                 .slice(0, 8)
@@ -73,7 +74,8 @@ export default function Dashboard() {
                   <tr key={(u.id || u.email || idx) + '-recent'}>
                     <td>{u.name || '-'}</td>
                     <td>{u.email || '-'}</td>
-                    <td>{u.createdAt ? new Date(u.createdAt).toLocaleDateString() : '-'}</td>
+                    <td>{u.bookmarks.length}</td>
+                    <td>{u.createdAt ? u.createdAt.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '-'}</td>
                   </tr>
                 ))}
             </tbody>

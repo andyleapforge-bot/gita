@@ -14,7 +14,9 @@ export async function listUsers() {
       email: email || "—",
       dob: data.dob || "",
       bookmarks: Array.isArray(data.bookmarks) ? data.bookmarks : [],
-      createdAt: data.createdAt || null,
+      createdAt: data.createdAt
+        ? (data.createdAt.toDate ? data.createdAt.toDate() : new Date(data.createdAt))
+        : null,
     };
   });
 
