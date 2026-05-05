@@ -6,10 +6,12 @@ export async function listUsers() {
   const users = snap.docs.map((d) => {
     const data = d.data();
 
+    const email = data.email || "";
+    const emailPrefix = email ? email.split('@')[0].replace(/[._]/g, ' ') : '';
     return {
       id: d.id,
-      name: data.name || "Unknown",
-      email: data.email || "—",
+      name: data.name || data.displayName || emailPrefix || "Unknown",
+      email: email || "—",
       dob: data.dob || "",
       bookmarks: Array.isArray(data.bookmarks) ? data.bookmarks : [],
       createdAt: data.createdAt || null,

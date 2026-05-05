@@ -13,8 +13,14 @@ class UserService {
 
     final ref = _db.collection(usersCollection).doc(u.uid);
 
+    // Only write name if not already set (preserve user-edited names)
+    final snap = await ref.get();
+    final existingName = snap.data()?['name'] as String? ?? '';
+    final displayName = u.displayName ?? '';
+
     await ref.set({
       'email': u.email ?? '',
+      'name': existingName.isNotEmpty ? existingName : displayName,
       'bookmarks': <String>[],
       // Use increment(0) so existing values are never overwritten on re-login
       'points': FieldValue.increment(0),
